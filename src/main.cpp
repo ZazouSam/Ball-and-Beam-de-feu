@@ -1,33 +1,45 @@
 #include <Arduino.h>
 
-// Define the pin connections for the Sharp 2y0a21 sensor
-#define SHARP_PIN A0
+// Define the pin connections for the A4988 driver
+#define DIR_PIN 14
+#define STEP_PIN 27
+#define ENABLE_PIN 26
+
+// Define the number of steps per revolution of the stepper motor
+const int stepsPerRevolution = 200;
 
 void setup() {
   // Initialize the serial port
-  Serial.begin(115200);
+  Serial.begin(9600);
   
-  // Set the Sharp 2y0a21 pin as input
-  pinMode(SHARP_PIN, INPUT);
+  // Set the A4988 driver pins as outputs
+  pinMode(DIR_PIN, OUTPUT);
+  pinMode(STEP_PIN, OUTPUT);
+  pinMode(ENABLE_PIN, OUTPUT);
+  
+  // Disable the A4988 driver
+  digitalWrite(ENABLE_PIN, HIGH);
 }
 
 void loop() {
-  // Read the analog value from the Sharp 2y0a21 sensor
-  int sensorValue = analogRead(SHARP_PIN);
-  //print the value to the serial monitor
-  Serial.println(sensorValue);
-  //converts the value to voltage
-  float voltage = sensorValue * (3.3 / 4096.0);
-  //print the voltage to the serial monitor
-  Serial.println(voltage);
-  // Convert the analog value to distance in cm
-  float distance = 29.988 * pow(voltage , -1.173);
+  // Rotate the stepper motor clockwise for one revolution
+  rotate(stepsPerRevolution, true);
+  delay(1000);
   
-  // Print the distance to the serial port
-  Serial.print("Distance: ");
-  Serial.print(distance);
-  Serial.println(" cm");
+  // Rotate the stepper motor counterclockwise for one revolution
+  rotate(stepsPerRevolution, false);
+  delay(1000);
+}
+
+void rotate(int steps, bool clockwise) {
+  // Set the direction of rotation
+  digitalWrite(DIR_PIN, clockwise ? HIGH : LOW);
   
-  // Wait for 100ms before reading the sensor again
-  delay(100);
+  // Step the motor the specified number of steps
+  for (int i = 0; i < steps; i++) {
+    digitalWrite(STEP_PIN, HIGH);
+    delayMicroseconds(500);
+    digitalWrite(STEP_PIN, LOW);
+    delayMicroseconds(500);
+  }
 }
